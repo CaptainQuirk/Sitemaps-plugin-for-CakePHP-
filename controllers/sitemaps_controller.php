@@ -52,7 +52,7 @@ class SitemapsController extends SitemapsAppController {
       
   }
   
-  /* Function dispatch
+  /** Function dispatch
    *
    * This function has two purposes : to provide a sitemap for a given controller of the main
    * application or to redirect to the index function to generate a sitemapindex for the controller
