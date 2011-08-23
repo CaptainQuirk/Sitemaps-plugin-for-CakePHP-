@@ -131,26 +131,22 @@ The Stuff model would look like this, with a very simple wrapper for your find q
 to be used twice in a row by two successive executions of a php request.
 
 
-class Stuff extends AppModel {
+    class Stuff extends AppModel {
 
-  function dynamicSitemapCount ( ) {
+      function dynamicSitemapCount ( ) {
   
-    return count ( $this->getDataForSitemap ( ) ) ;
+    
   
-  }
+      }
 
-  function dynamicSitemap ( $offset = 0 , $limit = 50000 ) {
+      function dynamicSitemap ( $offset = 0 , $limit = 50000 ) {
   
-    return $this->getDataForSitemap ( ) ;
+   
   
-  }
+      }
   
-  function getDataForSitemap ( ) {
   
-    return $this->find ( 'all' ) ;
-  
-  }
-}
+    }
 
 
 Then it's done. The plugin will count your static pages, your dynamic pages do the math and will either create a sitemap or a sitemapindex containing
