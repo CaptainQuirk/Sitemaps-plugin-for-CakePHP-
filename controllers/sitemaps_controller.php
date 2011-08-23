@@ -1,4 +1,13 @@
 <?php
+/**
+ * Class SitemapsController
+ * 
+ * 
+ *
+ *
+ *
+ *
+ */
 class SitemapsController extends SitemapsAppController {
   
   var $uses = null ;
@@ -7,6 +16,14 @@ class SitemapsController extends SitemapsAppController {
   
   var $helpers = array ( 'Sitemaps.Sitemap' , 'Cache' ) ;
   //var $helpers = array ( 'Sitemaps.Sitemap' ) ;
+  
+  
+  /**
+   * Function beforeFilter
+   * 
+   * Definition of the cake built-in beforeFilter Callback. Prevents non XML requests to be handled by sending a 404 response before anything else happens
+   *
+   */
   
   function beforeFilter ( ) {
     
@@ -19,9 +36,17 @@ class SitemapsController extends SitemapsAppController {
     
   }
   
+  /**
+   *  Function main
+   *
+   *  First action called by a bot according to the url given in robots.txt. It uses the SitemapConfig component to retrieve
+   *  a list of affected controllers set by the users in app/config/bootstrap.php and passes it to the corresponding view
+   *
+   */
+  
   function main ( ) {
       
-      $controllersList = $this->SitemapConfig->getControllersList();
+      $controllersList = $this->SitemapConfig->getControllersList ( ) ;
       
       $this->set ( 'controllersList' , array_unique ( $controllersList ) ) ;
       
@@ -33,33 +58,39 @@ class SitemapsController extends SitemapsAppController {
    * application or to redirect to the index function to generate a sitemapindex for the controller
    * if the model returns more than 50000 rows.
    *
-   * @param $controllerName
+   * @param string controllerSlug slugified version of the controller name
    *
    */
   
   
   function dispatch (  $controllerSlug = null ) {
     
+  // loading the appropriate controller  
     $controllerObject = $this->__getController ( $controllerSlug ) ;    
     
+  // setting empty variables
     $staticCount  = $dynamicCount  = 0;
     $staticUrlSet = $dynamicUrlSet = array ( ) ;
     
+  // setting the cache duration to the value set in the SitemapConfig component
     $this->cacheAction = $this->SitemapConfig->getControllerCacheDuration ( $controllerObject->name ) ;
 
-    
-    if (method_exists($controllerObject, 'staticSitemap')) {
-      $staticUrlSet =  $controllerObject->staticSitemap() ;
+  // testing the existence of the staticSitemap method in the controller 
+    if ( method_exists ( $controllerObject, 'staticSitemap' ) ) {
+    // Retrieving the set of urls
+      $staticUrlSet =  $controllerObject->staticSitemap ( ) ;
+    // Counting the set
       $staticCount  = count ( $staticUrlSet ) ;
     }
     
+  // Getting the name of the model that should correspond to the given controller
     $modelClass = $controllerObject->modelClass;
     
+  // Testing for the existence of the model 
     if ( $model = $this->__getModel ( $modelClass ) ) {
-      
-      
-      
-      if (method_exists( $model , 'dynamicSitemap') ) {
+    // Testing for the existence of the dynamicSitemap method in the model     
+      if ( method_exists ( $model , 'dynamicSitemap' ) ) {
+      // If the required dynamicSitemapCount method is missing, we trigger an error
         if ( !method_exists ( $model , 'dynamicSitemapCount') ) {
           trigger_error (
             __d('sitemaps',
@@ -68,58 +99,71 @@ class SitemapsController extends SitemapsAppController {
             E_USER_ERROR
           ) ;
         }
-        
+      
+      // Getting the number of urls affected for the given model  
         $dynamicCount = $model->dynamicSitemapCount ( ) ;
-      
-        
-      
+          
       }
-    }
+    }  
     
-    
-    
-    if ($limit = $this->SitemapConfig->getControllerLimit($controllerObject->name)) {
-      if ($staticCount + $dynamicCount <= $limit) {
+  // Getting the limit number through the component for the given component
+    if ( $limit = $this->SitemapConfig->getControllerLimit ( $controllerObject->name ) ) {
+      
+    // Testing if the sum of static urls and dynamic ones
+      if ( $staticCount + $dynamicCount <= $limit ) {
+        
+      // If dynamic urls exist
         if ( $dynamicCount > 0 ) {
-          $dynamicUrlSet = $model->dynamicSitemap();
+          
+        // Let's get them
+          $dynamicUrlSet = $model->dynamicSitemap ( ) ;
         }
-        // On envoie à la vue la liste de toutes les urls
-        $this->set('urlSet', array_merge($staticUrlSet, $dynamicUrlSet));
+        
+      // Passing the url set to the view
+        $this->set ( 'urlSet' , array_merge ( $staticUrlSet , $dynamicUrlSet ) ) ;
+        
       } else {
-        // On donne à la vue le nom du controller pour qu'elle crée les balises loc qui pointent vers :
-        // 1. la sitemap des urls statiques
-        // 2. les sitemaps des urls dynamiques paginées
-        $this->set('controllerSlug' , $controllerSlug );
         
-        $this->set ( compact ( 'staticCount' ) ) ;
+        // Passing back the slug passed in the url to the view
+          $this->set ( 'controllerSlug' , $controllerSlug ) ;
         
-        // On donne à la vue le nb de pages pour les urls de sitemap dynamiques
-        $this->set('dynamicPageCount', ceil ($dynamicCount / $limit));
+        // Passing the number of static urls
+          $this->set ( compact ( 'staticCount' ) ) ;
+        
+        // Passing the number of dynamic urls to the view to built paginated urls
+          $this->set ( 'dynamicPageCount', ceil ( $dynamicCount / $limit ) ) ;
       }
     }
   }
   
 /**
- * Liste des urls statiques
+ * List of static urls
+ *
+ * @param string controllerSlug 
+ * 
  */
-  function static_view($controllerSlug = '') {
+  function static_view ( $controllerSlug = '' ) {
     
-    
+  // loading the appropriate controller   
     $controllerObject = $this->__getController ( $controllerSlug ) ;
-    
+  
+  // setting the cache duration to the value set in the SitemapConfig component    
     $this->cacheAction = $this->SitemapConfig->getControllerCacheDuration ( $controllerObject->name ) ;
-    
-    if (!method_exists($controllerObject, 'staticSitemap')) {
+  
+  // Checking for the existence of the sitemap method and triggering an error if missing  
+    if ( !method_exists ( $controllerObject , 'staticSitemap' ) ) {
       trigger_error (
-        __d('sitemaps',
+        __d ( 'sitemaps',
           sprintf ( 'You must create the method staticSitemap() in %s' , $controllerClass )
         ) ,
         E_USER_ERROR
       ) ;
     }
+  
+  // Passing the set of url to the view  
+    $this->set ( 'urlSet', $controllerObject->staticSitemap ( ) ) ;
     
-    $this->set('urlSet', $controllerObject->staticSitemap() ) ;
-    
+  // use of the sitemap view
     $this->render ( 'sitemap' ) ;
   }
   
@@ -128,10 +172,13 @@ class SitemapsController extends SitemapsAppController {
  */
   function dynamic_view($controllerSlug, $page) {
   
+  // loading the appropriate controller  
     $controllerObject = $this->__getController ( $controllerSlug ) ;
-    
+  
+  // setting the cache duration to the value set in the SitemapConfig component  
     $this->cacheAction = $this->SitemapConfig->getControllerCacheDuration ( $controllerObject->name ) ;
-    
+  
+  // Getting the name of the model that should correspond to the given controller  
     $modelClass = $controllerObject->modelClass;
     
     $model = $this->__getModel ( $modelClass , true ) ;
