@@ -75,7 +75,7 @@ format. Given the beforementioned example, it will look this way :
         </sitemap>
         <sitemap>
           <loc>
-            http://your.domain.com/sitemaps/sitemaps/dispatch/stuffs.xml
+            http://your.domain.com/sitemaps/sitemaps/dispatch/items.xml
           </loc>
         </sitemap>
         <sitemap>
@@ -163,7 +163,7 @@ We can "only" generate the following number of dynamic urls :
 
 Since we cannot load automatically a routes.php file specific to the plugin, you'll have to add the following line to app/config/routes.php
 
-Router::parseExtensions ( 'xml' )
+    Router::parseExtensions ( 'xml' )
 
 or add the 'xml' value to the parameters of the alread called static function.
 
